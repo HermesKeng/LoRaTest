@@ -17,7 +17,7 @@ float rssi_value;
 string LoRaRecvNum;
 int NodeAddress;
 char my_packet[100];
-
+Rssi_info rssi_info;
 void setup()
 {
     // Print a start message
@@ -60,11 +60,12 @@ void setup()
     delay(1000);
 }
 
-void Recv(Rssi_info &rssi_info){
+Rssi_info Recv(Rssi_info rssi_info){
     
     bool is_RSSI;
     char rssiValue[20];
     char ReceiveMessage[100];
+    char deviceID;
     printf("Begin receiving message ! \n");
     // Receive message
     e = sx1272.receivePacketTimeout(10000);
@@ -81,15 +82,18 @@ void Recv(Rssi_info &rssi_info){
         if(!is_RSSI){
             rssi_value=sx1272._RSSIpacket;
             rssi_info.RSSI = rssi_value;
-            
         }
         else{
             printf("rssi error !\n");
             fileInput("rssi error!\n");
-            return;
+            return rssi_info;
         }
         
+        deviceID = findDeviceID(my_packet[0]);
         
+        rssi_info.RSSI = rssi_value;
+        rssi_info.deviceID = deviceID;
+        rssi_info.number = 1;
         //display RSSI record it
         sprintf(ReceiveMessage,"Packet send from address = %s\n",my_packet);
         sprintf(rssiValue,"rssi = %f ",rssi_value);
@@ -101,17 +105,17 @@ void Recv(Rssi_info &rssi_info){
     else {
         printf("Receive packet, state %d\n",e);
     }
-    return;
+    return rssi_info;
 }
 
-char* findDeviceID(int address){
-    if(address == 1){
+char findDeviceID(char address){
+    if(address == '1'){
         return "A";
     }
-    else if(address == 2){
+    else if(address == '2'){
         return "B";
     }
-    else if(address == 3){
+    else if(address == '3'){
         return "C";
     }
 }
@@ -121,17 +125,18 @@ int main (int argc, char **argv){
     float distance[3];
     //Rssi_info* rssi_arr;
     //Rssi_BufferManager bufferManger;
-    Rssi_info *new_rssi;
+    Rssi_info new_rssi;
     Locate_info loca_info;
     
     int count = 0;
     setup();
     while(count < 3){
+        //default set up;
         rssi_info.RSSI = 0;
-        rssi_info.deviceID = NULL;
+        rssi_info.deviceID ;
         rssi_info.number = 0;
-        Recv(new_rssi);
-        distance[count] = Rssi_to_distance(*new_rssi, -50, 2);
+        Recv();
+        distance[count] = Rssi_to_distance(new_rssi, -50, 2);
         count++;
     }
     
