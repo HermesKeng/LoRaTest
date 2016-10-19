@@ -9,7 +9,7 @@
 #include "arduPiLoRa.h"
 #include <string>
 #include "FileTran.h"
-#include "rssi_to_distance/LoRa_RSSIToDistance.h"
+#include "LoRa_RSSIToDistance.h"
 using namespace std;
 
 int e;
@@ -79,7 +79,7 @@ void Recv(Rssi_info &rssi_info){
         }
                //get rssi_value;
         is_RSSI=sx1272.getRSSIpacket();
-        if(is_RSSI){
+        if(!is_RSSI){
             rssi_value=sx1272._RSSIpacket;
             rssi_info.RSSI = rssi_value;
             
@@ -101,6 +101,7 @@ void Recv(Rssi_info &rssi_info){
     }
     else {
         printf("Receive packet, state %d\n",e);
+        fileInput("It didn't send anything");
     }
     return;
 }
