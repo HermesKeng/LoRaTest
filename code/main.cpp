@@ -17,7 +17,6 @@ float rssi_value;
 string LoRaRecvNum;
 int NodeAddress;
 char my_packet[100];
-Rssi_info rssi_info;
 
 void setup()
 {
@@ -101,7 +100,6 @@ void Recv(Rssi_info &rssi_info){
     }
     else {
         printf("Receive packet, state %d\n",e);
-        fileInput("It didn't send anything");
     }
     return;
 }
@@ -120,10 +118,10 @@ char* findDeviceID(int address){
 int main (int argc, char **argv){
     LoRaRecvNum = 'none';
     fileOpen(argv[1]);
-    
+    float distance[3];
     //Rssi_info* rssi_arr;
     //Rssi_BufferManager bufferManger;
-    Rssi_info new_rssi;
+    Rssi_info *new_rssi;
     Locate_info loca_info;
     
     int count = 0;
@@ -133,10 +131,11 @@ int main (int argc, char **argv){
         rssi_info.deviceID = NULL;
         rssi_info.number = 0;
         Recv(new_rssi);
+        distance[count] = Rssi_to_distance(*new_rssi, -50, 2);
         count++;
     }
     
     
-    return (0);
+    return (0);s
 }
 
