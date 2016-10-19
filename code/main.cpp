@@ -101,6 +101,7 @@ void Recv(Rssi_info &rssi_info){
     }
     else {
         printf("Receive packet, state %d\n",e);
+        fileInput("It didn't send anything");
     }
     return;
 }
