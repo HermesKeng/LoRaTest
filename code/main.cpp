@@ -79,7 +79,7 @@ void Recv(Rssi_info &rssi_info){
         }
                //get rssi_value;
         is_RSSI=sx1272.getRSSIpacket();
-        if(is_RSSI){
+        if(!is_RSSI){
             rssi_value=sx1272._RSSIpacket;
             rssi_info.RSSI = rssi_value;
             
