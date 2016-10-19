@@ -16,6 +16,8 @@ int e;
 float rssi_value;
 string LoRaRecvNum;
 int NodeAddress;
+char my_packet[100];
+Rssi_info rssi_info;
 
 void setup()
 {
@@ -45,10 +47,8 @@ void setup()
     // Select output power (Max, High or Low)
     e |= sx1272.setPower('H');
     printf("Setting Power: state %d\n", e);
-    
-    
-    NodeAddress = 1;
     // Set the node address
+    NodeAddress=1;
     e |= sx1272.setNodeAddress(NodeAddress);
     printf("Setting Node address: state %d\n", e);
     
@@ -64,6 +64,8 @@ void setup()
 void Recv(Rssi_info &rssi_info){
     
     bool is_RSSI;
+    char rssiValue[20];
+    char ReceiveMessage[100];
     printf("Begin receiving message ! \n");
     // Receive message
     e = sx1272.receivePacketTimeout(10000);
@@ -75,33 +77,27 @@ void Recv(Rssi_info &rssi_info){
         {
             my_packet[i] = (char)sx1272.packet_received.data[i];
         }
-        char ReceiveMessage[100];
-        sprintf(ReceiveMessage,"Packet send from address = %s\n",my_packet);
-        printf("%s", ReceiveMessage);
-        fileInput(ReceiveMessage);
-        //get rssi_value;
+               //get rssi_value;
         is_RSSI=sx1272.getRSSIpacket();
         if(is_RSSI){
             rssi_value=sx1272._RSSIpacket;
-            //display RSSI record it
-            char rssiValue[20];
-            sprintf(rssiValue,"rssi = %f ",rssi_value);
-            printf("%f\n",rssi_value);
-            fileInput(rssiValue);
+            rssi_info.RSSI = rssi_value;
+            
         }
         else{
             printf("rssi error !\n");
             fileInput("rssi error!\n");
             return;
         }
-        int address = stoi(my_packet);
-        char* deviceID = findDeviceID(address);
         
         
-        rssi_info.RSSI = rssi_value;
-        rssi_info.deviceID = deviceID;
-        rssi_info.number = 1;
-
+        //display RSSI record it
+        sprintf(ReceiveMessage,"Packet send from address = %s\n",my_packet);
+        sprintf(rssiValue,"rssi = %f ",rssi_value);
+        printf("%s ", ReceiveMessage);
+        printf("%f\n",rssi_value);
+        fileInput(ReceiveMessage);
+        fileInput(rssiValue);
     }
     else {
         printf("Receive packet, state %d\n",e);
@@ -111,64 +107,31 @@ void Recv(Rssi_info &rssi_info){
 
 char* findDeviceID(int address){
     if(address == 1){
-        return "A"
+        return "A";
     }
     else if(address == 2){
-        return "B"
+        return "B";
     }
     else if(address == 3){
-        return "C"
+        return "C";
     }
 }
 int main (int argc, char **argv){
     LoRaRecvNum = 'none';
     fileOpen(argv[1]);
     
+    //Rssi_info* rssi_arr;
     //Rssi_BufferManager bufferManger;
     Rssi_info new_rssi;
-    Rssi_info* rssi_arr;
     Locate_info loca_info;
     
-    setup();
-    
-    
     int count = 0;
+    setup();
     while(count < 3){
         rssi_info.RSSI = 0;
         rssi_info.deviceID = NULL;
         rssi_info.number = 0;
-        
-        e = Recv(new_rssi);
-        /*
-        if(e != 0){
-            printf("recving data error!End Program");
-            return 1;
-        }
-        
-       // bufferManger.buf_push(new_rssi);
-        
-        //rssi_arr = bufferManger.collectTripleRssi();
-        
-        //若有收集到三個rssi  則包成locate_info並繼續做下去
-        if (rssi_arr != NULL) {
-            float d_arr[3];
-            for (int i = 0; i < 3; i++) {
-                d_arr[i] = Rssi_to_distance(*(rssi_arr + i), -50, 2);
-            }
-            
-            loca_info = FillIndoorLocate_info(d_arr[0], d_arr[1], d_arr[2]);
-            
-        }
-        else {
-            continue;
-        }
-        
-        
-        */
-        /*
-         將loca_info丟給distance_to_point計算;
-         */
-        
+        Recv(new_rssi);
         count++;
     }
     
