@@ -21,11 +21,11 @@ Rssi_info rssi_info;
 void setup()
 {
     // Print a start message
-    printf("SX1272 module configuration in Raspberry Pi\n");
+    //printf("SX1272 module configuration in Raspberry Pi\n");
     
     // Power ON the module
     e = sx1272.ON();
-    printf("Setting power ON: state %d\n", e);
+    //printf("Setting power ON: state %d\n", e);
 
     // Set transmission mode
     e |= sx1272.setMode(4);
@@ -33,7 +33,7 @@ void setup()
     
     // Set header
     e |= sx1272.setHeaderON();
-    printf("Setting Header ON: state %d\n", e);
+    //printf("Setting Header ON: state %d\n", e);
     
     // Select frequency channel
     e |= sx1272.setChannel(CH_10_868);
@@ -41,11 +41,11 @@ void setup()
     
     // Set CRC
     e |= sx1272.setCRC_ON();
-    printf("Setting CRC ON: state %d\n", e);
+    //printf("Setting CRC ON: state %d\n", e);
     
     // Select output power (Max, High or Low)
     e |= sx1272.setPower('H');
-    printf("Setting Power: state %d\n", e);
+    //printf("Setting Power: state %d\n", e);
     // Set the node address
     NodeAddress=1;
     e |= sx1272.setNodeAddress(NodeAddress);
@@ -60,13 +60,25 @@ void setup()
     delay(1000);
 }
 
+char findDeviceID(char address){
+    if(address == '1'){
+        return "A";
+    }
+    else if(address == '2'){
+        return "B";
+    }
+    else if(address == '3'){
+        return "C";
+    }
+}
+
 Rssi_info Recv(Rssi_info rssi_info){
     
     bool is_RSSI;
     char rssiValue[20];
     char ReceiveMessage[100];
     char deviceID;
-    printf("Begin receiving message ! \n");
+    
     // Receive message
     e = sx1272.receivePacketTimeout(10000);
     if ( e == 0 )
@@ -96,9 +108,9 @@ Rssi_info Recv(Rssi_info rssi_info){
         rssi_info.number = 1;
         //display RSSI record it
         sprintf(ReceiveMessage,"Packet send from address = %s\n",my_packet);
-        sprintf(rssiValue,"rssi = %f ",rssi_value);
+        sprintf(rssiValue,"rssi = %.2f ",rssi_value);
         printf("%s ", ReceiveMessage);
-        printf("%f\n",rssi_value);
+        printf("%.2f\n",rssi_value);
         fileInput(ReceiveMessage);
         fileInput(rssiValue);
     }
@@ -108,39 +120,53 @@ Rssi_info Recv(Rssi_info rssi_info){
     return rssi_info;
 }
 
-char findDeviceID(char address){
-    if(address == '1'){
-        return "A";
-    }
-    else if(address == '2'){
-        return "B";
-    }
-    else if(address == '3'){
-        return "C";
-    }
-}
+
 int main (int argc, char **argv){
     LoRaRecvNum = 'none';
     fileOpen(argv[1]);
     float distance[3];
+    char output[50];
     //Rssi_info* rssi_arr;
     //Rssi_BufferManager bufferManger;
     Rssi_info new_rssi;
+    Rssi_info packet[3];
     Locate_info loca_info;
+    Point finalPoint;
+    Point BSpointA,BSpointB,BSpointC;
+    BSpointA=set_Bspoint(4.0,4.0, 'A');
+    BSpointB=set_Bspoint(9.0,7.0, 'B');
+    BSpointC=set_Bspoint(9.0,1.0, 'C');
+    
     
     int count = 0;
     setup();
+    printf("Begin receiving message ! \n");
     while(count < 3){
         //default set up;
-        rssi_info.RSSI = 0;
-        rssi_info.deviceID ;
-        rssi_info.number = 0;
-        Recv();
-        distance[count] = Rssi_to_distance(new_rssi, -50, 2);
+        packet[count]=Recv();
+        distance[count] = Rssi_to_distance(packet[count], -34, 2);
+        printf("Point %c , Distance : %.2f \n",packet[count].deviceID,distance[count])
         count++;
     }
-    
-    
-    return (0);s
+    for(int i=0;i<3;i++){
+        switch (packet[count].deviceID) {
+            case 'A':
+                loca_info.distance[0]=distance[0];
+                break;
+            case 'B':
+                loca_info.distance[1]=distance[1];
+                break;
+            case 'C':
+                loca_info.distance[2]=distance[2];
+                break;
+            default:
+                break;
+        }
+    }
+    finalPoint=trilateration(BSpointA, BSpointB, BSpointC, loca_info.distances[0],loca_info.distances[1],loca_info.distances[2]);
+    printf("finalPoint>> X: %.2f ,Y: %.2f \n",finalPoint.x,finalPoint.y);
+    sprintf(output,"finalPoint>> X: %.2f ,Y: %.2f \n",finalPoint.x,finalPoint.y);
+    fileInput(output);
+    return (0);
 }
 
